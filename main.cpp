@@ -2,7 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define MAXLINES 100;
+#define MAXLINES 100
+#define MAXLEN 100000
+
 char * Index(void * data, size_t el_size, size_t i);
 
 int CompareIntUp(const void *adr_a, const void *adr_b);
@@ -15,9 +17,17 @@ void Swap(void *value1, void *value2, size_t el_size);
 
 void PrintString(char *str, const char *reason);
 
+int ReadFromFile(char * filename, char * index[]);
+
 int main()
 {
     //PrintString("yaitsa", "PO_ROFLU");
+
+    char * index[MAXLINES] = {};
+
+    ReadFromFile("Onegin.txt", index);
+
+    //printf("%p", index[0]);
 
 }
 
@@ -87,4 +97,19 @@ void PrintString(char *str, const char *reason)
 char * Index(void * data, size_t el_size, size_t i)
 {
     return (char *) data + el_size*i; 
+}
+
+int ReadFromFile(char * filename, char * index[])
+{
+    FILE *fp = fopen(filename, "r");
+
+    char buffer[MAXLEN] = "";
+    int i = 0;
+    while (fgets(buffer, MAXLINES, fp))
+    {
+        index[i] = strdup(buffer);
+        i++;
+    }
+
+    fclose(fp);
 }
