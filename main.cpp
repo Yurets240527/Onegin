@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 
-#define MAXLINES 100
+#define MAXLINES 100000
 #define MAXLEN 100000
 
 char * Index(void * data, size_t el_size, size_t i);
@@ -17,7 +18,11 @@ void Swap(void *value1, void *value2, size_t el_size);
 
 void PrintString(char *str, const char *reason);
 
-int ReadFromFile(char * filename, char * index[]);
+int ReadFromFile(const char * filename, char * index[]);
+
+int WriteToFile(const char * filename, char * index[]);
+
+int Strcomp(const char *s1, const char *s2);
 
 int main()
 {
@@ -25,27 +30,56 @@ int main()
 
     char * index[MAXLINES] = {};
 
-    int num_of_strings = ReadFromFile("Onegin.txt", index);
+    int num_of_strings = ReadFromFile("Onegin2.txt", index);
+
+    //printf("fghjfghj\n");
 
     //printf("%s\n", index[0]);
 
     //PrintString(index[0], "POROFLU");
 
-    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
+    qsort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
 
     printf("%s", index[0]);
+
+    WriteToFile("SortOnegin.txt", index);
     
 
 }
 
+int Strcomp(const char *s1, const char *s2)
+{
+    int i = 0;
+    int j = 0;
 
+    while (s1[i] != '\0' && s2[j] != '\0')
+    {
+        while(!isalpha(s1[i]) && s1[i] != '\0') i++;
+        while(!isalpha(s2[j]) && s2[j] != '\0') j++;
+
+        if (s1[i] == '\0' || s2[j] == '\0') break;
+
+        if (tolower(s1[i]) != tolower(s2[j]))
+            return s1[i] - s2[i];
+
+        i++;
+        j++;
+
+    }
+
+    while(s1[i] != '\0') i++;
+    while(s2[j] != '\0') j++;
+
+    return s1[i] - s2[i];
+
+}
 
 int CompareStrUp(const void *adr_a, const void *adr_b)
 {
     const char* a = *(const char **)adr_a;
     const char* b = *(const char **)adr_b;
 
-    return strcmp(a,b);
+    return Strcomp(a,b);
 }
 
 int CompareDoubleUp(const void *adr_a, const void *adr_b)
@@ -62,10 +96,10 @@ void BubaSort(void *data, size_t len, size_t el_size, int(*Comparator) (const vo
 
     for (size_t n = 0; n < len-1; n++)
     {
+        need_continue = false;
 
         for (size_t i = 0; i < len-1-n; i++)
         {
-            need_continue = false;
 
             if (Comparator((Index(data, el_size, i)), (Index(data, el_size, i+1))) > 0)
             {
@@ -106,7 +140,7 @@ char * Index(void * data, size_t el_size, size_t i)
     return (char *) data + el_size*i; 
 }
 
-int ReadFromFile(char * filename, char * index[])
+int ReadFromFile( const char * filename, char * index[])
 {
     FILE *fp = fopen(filename, "r");
 
@@ -114,11 +148,26 @@ int ReadFromFile(char * filename, char * index[])
     int i = 0;
     while (fgets(buffer, MAXLINES, fp))
     {
-        //buffer[strcspn(buffer, "\n")] = '\0';
-        index[i] = strdup(buffer);
-        i++;
+        if (!(isspace(buffer[0]) && strlen(buffer) < 5))
+        {
+            index[i] = strdup(buffer);
+            i++;
+        }
     }
 
+    fclose(fp);
+    return i;
+}
+
+int WriteToFile(const char * filename, char * index[])
+{
+    FILE *fp = fopen(filename, "w");
+    int i = 0;
+    while (index[i])
+    {
+        fprintf(fp, "%s\n", index[i]);
+        i++;
+    }
     fclose(fp);
     return i;
 }
