@@ -7,7 +7,7 @@
 
 char * Index(void * data, size_t el_size, size_t i);
 
-int CompareIntUp(const void *adr_a, const void *adr_b);
+int CompareStrUp(const void *adr_a, const void *adr_b);
 
 int CompareDoubleUp(const void *adr_a, const void *adr_b);
 
@@ -25,20 +25,27 @@ int main()
 
     char * index[MAXLINES] = {};
 
-    ReadFromFile("Onegin.txt", index);
+    int num_of_strings = ReadFromFile("Onegin.txt", index);
 
-    //printf("%p", index[0]);
+    //printf("%s\n", index[0]);
+
+    //PrintString(index[0], "POROFLU");
+
+    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
+
+    printf("%s", index[0]);
+    
 
 }
 
 
 
-int CompareIntUp(const void *adr_a, const void *adr_b)
+int CompareStrUp(const void *adr_a, const void *adr_b)
 {
-    const int a = *(const int *)adr_a;
-    const int b = *(const int *)adr_b;
+    const char* a = *(const char **)adr_a;
+    const char* b = *(const char **)adr_b;
 
-    return (a - b);
+    return strcmp(a,b);
 }
 
 int CompareDoubleUp(const void *adr_a, const void *adr_b)
@@ -107,9 +114,11 @@ int ReadFromFile(char * filename, char * index[])
     int i = 0;
     while (fgets(buffer, MAXLINES, fp))
     {
+        //buffer[strcspn(buffer, "\n")] = '\0';
         index[i] = strdup(buffer);
         i++;
     }
 
     fclose(fp);
+    return i;
 }
