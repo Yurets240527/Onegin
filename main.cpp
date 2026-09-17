@@ -10,6 +10,8 @@ char * Index(void * data, size_t el_size, size_t i);
 
 int CompareStrUp(const void *adr_a, const void *adr_b);
 
+int CompareStrDown(const void *adr_a, const void *adr_b);
+
 int CompareDoubleUp(const void *adr_a, const void *adr_b);
 
 void BubaSort(void *data, size_t len, size_t el_size, int(*Comparator) (const void *a, const void *b));
@@ -24,6 +26,8 @@ int WriteToFile(const char * filename, char * index[]);
 
 int Strcomp(const char *s1, const char *s2);
 
+int StrcompReverse(const char *s1, const char *s2);
+
 int main()
 {
     //PrintString("yaitsa", "PO_ROFLU");
@@ -32,15 +36,11 @@ int main()
 
     int num_of_strings = ReadFromFile("Onegin2.txt", index);
 
-    //printf("fghjfghj\n");
-
-    //printf("%s\n", index[0]);
-
-    //PrintString(index[0], "POROFLU");
-
     BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
 
-    printf("%s", index[0]);
+    WriteToFile("SortOnegin.txt", index);
+
+    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
 
     WriteToFile("SortOnegin.txt", index);
     
@@ -74,12 +74,45 @@ int Strcomp(const char *s1, const char *s2)
 
 }
 
+int StrcompReverse(const char *s1, const char *s2)
+{
+    int i = strlen(s1)-1;
+    int j = strlen(s2)-1;
+
+    while (i > 0 && j > 0)
+    {
+        while(!isalpha(s1[i]) && i > 0) i--;
+        while(!isalpha(s2[j]) && j > 0) j--;
+
+        if (i <= 0 || j <= 0) break;
+
+        if (tolower(s1[i]) != tolower(s2[j]))
+            return s1[i] - s2[j];
+
+        i--;
+        j--;
+
+    }
+
+
+    return s1[i] - s2[j];
+
+}
+
 int CompareStrUp(const void *adr_a, const void *adr_b)
 {
     const char* a = *(const char **)adr_a;
     const char* b = *(const char **)adr_b;
 
     return Strcomp(a,b);
+}
+
+int CompareStrDown(const void *adr_a, const void *adr_b)
+{
+    const char* a = *(const char **)adr_a;
+    const char* b = *(const char **)adr_b;
+
+    return StrcompReverse(a,b);
 }
 
 int CompareDoubleUp(const void *adr_a, const void *adr_b)
@@ -161,7 +194,10 @@ int ReadFromFile( const char * filename, char * index[])
 
 int WriteToFile(const char * filename, char * index[])
 {
-    FILE *fp = fopen(filename, "w");
+    FILE *fp = fopen(filename, "a");
+
+    for(int i = 0; i<5; i++) fprintf(fp, ". . . . . . . . . . . . . . . . . . .\n");
+
     int i = 0;
     while (index[i])
     {
