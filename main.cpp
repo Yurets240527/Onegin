@@ -38,7 +38,7 @@ int main()
 
     //PrintString(index[0], "POROFLU");
 
-    qsort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
+    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
 
     printf("%s", index[0]);
 
@@ -60,7 +60,7 @@ int Strcomp(const char *s1, const char *s2)
         if (s1[i] == '\0' || s2[j] == '\0') break;
 
         if (tolower(s1[i]) != tolower(s2[j]))
-            return s1[i] - s2[i];
+            return tolower(s1[i]) - tolower(s2[j]);
 
         i++;
         j++;
@@ -70,7 +70,7 @@ int Strcomp(const char *s1, const char *s2)
     while(s1[i] != '\0') i++;
     while(s2[j] != '\0') j++;
 
-    return s1[i] - s2[i];
+    return tolower(s1[i]) - tolower(s2[j]);
 
 }
 
