@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #define MAXLINES 100000
 #define MAXLEN 100000
@@ -28,13 +30,17 @@ int Strcomp(const char *s1, const char *s2);
 
 int StrcompReverse(const char *s1, const char *s2);
 
+char * Strdup(const char *s);
+
+int ReadFile(const char * filename);
+
 int main()
 {
     //PrintString("yaitsa", "PO_ROFLU");
 
-    char * index[MAXLINES] = {};
+    /*char * index[MAXLINES] = {};
 
-    int num_of_strings = ReadFromFile("Onegin2.txt", index);
+    int num_of_strings = ReadFromFile("Onegin.txt", index);
 
     BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
 
@@ -42,7 +48,9 @@ int main()
 
     BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
 
-    WriteToFile("SortOnegin.txt", index);
+    WriteToFile("SortOnegin.txt", index);  */
+
+    ReadFile("Onegin.txt");
     
 
 }
@@ -183,7 +191,7 @@ int ReadFromFile( const char * filename, char * index[])
     {
         if (!(isspace(buffer[0]) && strlen(buffer) < 5))
         {
-            index[i] = strdup(buffer);
+            index[i] = Strdup(buffer);
             i++;
         }
     }
@@ -206,4 +214,29 @@ int WriteToFile(const char * filename, char * index[])
     }
     fclose(fp);
     return i;
+}
+
+char * Strdup(const char *s) {
+    char *p;
+    p = (char *) calloc(strlen(s) + 1, sizeof(char));
+    if (p != NULL) {
+        strcpy(p, s);
+    }
+    return p;
+}
+
+int ReadFile(const char * filename){
+
+    struct stat st = {};
+    stat(filename, &st);
+
+    int file_descriptor = open(filename, O_RDONLY);
+
+    size_t max_size = st.st_size;
+
+    char buffer[max_size] = {};
+
+    //if (file_descriptor == -1) printf("penis");
+
+    size_t real_buffer_size = read(file_descriptor, buffer, max_size);
 }
