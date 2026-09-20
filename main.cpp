@@ -32,11 +32,15 @@ int StrcompReverse(const char *s1, const char *s2);
 
 char * Strdup(const char *s);
 
-int ReadFile(const char * filename);
+int ReadFile(const char * filename, char buffer[]);
+
+int FullIndex(char *index[], char buffer[], size_t size);
 
 int main()
 {
     //PrintString("yaitsa", "PO_ROFLU");
+
+    char buffer[MAXLEN] = {};
 
     /*char * index[MAXLINES] = {};
 
@@ -50,8 +54,24 @@ int main()
 
     WriteToFile("SortOnegin.txt", index);  */
 
-    ReadFile("Onegin.txt");
+    int buffer_size = ReadFile("Onegin2.txt", buffer);
+
+    //printf("%s\n", buffer);
+    printf("%d\n", buffer_size);
     
+    char * index[MAXLINES] = {};
+
+    index[0] = buffer;
+
+    int num_of_strings = FullIndex(index, buffer, buffer_size);
+
+    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
+
+    WriteToFile("SortOnegin.txt", index);
+
+    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
+
+    WriteToFile("SortOnegin.txt", index);
 
 }
 
@@ -60,25 +80,26 @@ int Strcomp(const char *s1, const char *s2)
     int i = 0;
     int j = 0;
 
-    while (s1[i] != '\0' && s2[j] != '\0')
+     while (s1[i] != '\0' || s2[j] != '\0')
     {
-        while(!isalpha(s1[i]) && s1[i] != '\0') i++;
-        while(!isalpha(s2[j]) && s2[j] != '\0') j++;
+        while (s1[i] != '\0' && !isalpha(s1[i])) i++;
+        while (s2[j] != '\0' && !isalpha(s2[j])) j++;
 
-        if (s1[i] == '\0' || s2[j] == '\0') break;
+        if (s1[i] == '\0' && s2[j] == '\0') return 0;
 
-        if (tolower(s1[i]) != tolower(s2[j]))
-            return tolower(s1[i]) - tolower(s2[j]);
+        if (s1[i] == '\0') return -1;
+        if (s2[j] == '\0') return 1;
+
+        int c1 = tolower(s1[i]);
+        int c2 = tolower(s2[j]);
+
+        if (c1 != c2) return c1 - c2;
 
         i++;
         j++;
-
     }
 
-    while(s1[i] != '\0') i++;
-    while(s2[j] != '\0') j++;
-
-    return tolower(s1[i]) - tolower(s2[j]);
+    return 0;
 
 }
 
@@ -225,7 +246,7 @@ char * Strdup(const char *s) {
     return p;
 }
 
-int ReadFile(const char * filename){
+int ReadFile(const char * filename, char buffer[]){
 
     struct stat st = {};
     stat(filename, &st);
@@ -234,9 +255,40 @@ int ReadFile(const char * filename){
 
     size_t max_size = st.st_size;
 
-    char buffer[max_size] = {};
-
-    //if (file_descriptor == -1) printf("penis");
+    if (file_descriptor == -1) return -1;
 
     size_t real_buffer_size = read(file_descriptor, buffer, max_size);
+
+    close(file_descriptor);
+
+    buffer[real_buffer_size] = '\0';
+
+    return real_buffer_size;
+}
+
+int FullIndex(char *index[], char buffer[], size_t size)
+{
+    int current_index = 1;
+    int i = 0;
+    int j = 0;
+    while (i < size)
+    {
+        if (buffer[i] == '\0') printf("!\n");
+        if (buffer[i] == '\n')
+        {
+            buffer[i] = '\0';
+
+            if (buffer[i+1] != '\n' && buffer[i+1] != '\0')
+            {
+                j = i + 1;
+                while (buffer[j] == ' ') j++;
+                index[current_index] = &(buffer[j]);
+                current_index++;
+            }
+        }
+        i++;
+    }
+
+    index[current_index] = NULL;
+    return current_index;
 }
