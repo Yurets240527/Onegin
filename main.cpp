@@ -5,8 +5,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#define MAXLINES 100000
-#define MAXLEN 100000
 
 char * Index(void * data, size_t el_size, size_t i);
 
@@ -19,8 +17,6 @@ void BubaSort(void *data, size_t len, size_t el_size, int(*Comparator) (const vo
 void Swap(void *value1, void *value2, size_t el_size);
 
 void PrintString(char *str, const char *reason);
-
-int ReadFromFile(const char * filename, char * index[]);
 
 int WriteToFile(const char * filename, char * index[]);
 
@@ -36,30 +32,25 @@ int FullIndex(char *index[], char buffer[], size_t size);
 
 int WriteFromBuffer(const char *filename, char buffer[], size_t size);
 
+int CountSymbol(char *buffer, char sym, size_t size);
+
 int main()
 {
-    //PrintString("yaitsa", "PO_ROFLU");
+    struct stat st = {};
 
-    char buffer[MAXLEN] = {};
+    stat("FullOnegin.txt", &st);
 
-    /*char * index[MAXLINES] = {};
+    size_t max_size = st.st_size;
 
-    int num_of_strings = ReadFromFile("Onegin.txt", index);
+    char *buffer = (char *) calloc(max_size, sizeof(char));
 
-    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
+    int buffer_size = ReadFile("FullOnegin.txt", buffer);
 
-    WriteToFile("SortOnegin.txt", index);
+    int num_of_lines = CountSymbol(buffer, '\n', buffer_size) + 1;
 
-    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
-
-    WriteToFile("SortOnegin.txt", index);  */
-
-    int buffer_size = ReadFile("Onegin2.txt", buffer);
-
-    //printf("%s\n", buffer);
     printf("%d\n", buffer_size);
     
-    char * index[MAXLINES] = {};
+    char **index = (char**) calloc(num_of_lines, sizeof(char*));
 
     index[0] = buffer;
 
@@ -69,11 +60,13 @@ int main()
 
     WriteToFile("SortOnegin.txt", index);
 
-    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
+    qsort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
 
     WriteToFile("SortOnegin.txt", index);
 
     WriteFromBuffer("SortOnegin.txt", buffer, buffer_size);
+
+    free(buffer);
 
 }
 
@@ -197,25 +190,6 @@ char * Index(void * data, size_t el_size, size_t i)
     return (char *) data + el_size*i; 
 }
 
-int ReadFromFile( const char * filename, char * index[])
-{
-    FILE *fp = fopen(filename, "r");
-
-    char buffer[MAXLEN] = "";
-    int i = 0;
-    while (fgets(buffer, MAXLINES, fp))
-    {
-        if (!(isspace(buffer[0]) && strlen(buffer) < 5))
-        {
-            index[i] = Strdup(buffer);
-            i++;
-        }
-    }
-
-    fclose(fp);
-    return i;
-}
-
 int WriteToFile(const char * filename, char * index[])
 {
     FILE *fp = fopen(filename, "a");
@@ -304,4 +278,13 @@ int WriteFromBuffer(const char *filename, char buffer[], size_t size)
     }
 
     fclose(fp);
+}
+
+int CountSymbol(char *buffer, char sym, size_t size)
+{
+    int count = 0;
+    for (int i = 0; i < size; i++)
+        if (buffer[i] == sym) count++;
+
+    return count;
 }
