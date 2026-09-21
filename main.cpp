@@ -14,8 +14,6 @@ int CompareStrUp(const void *adr_a, const void *adr_b);
 
 int CompareStrDown(const void *adr_a, const void *adr_b);
 
-int CompareDoubleUp(const void *adr_a, const void *adr_b);
-
 void BubaSort(void *data, size_t len, size_t el_size, int(*Comparator) (const void *a, const void *b));
 
 void Swap(void *value1, void *value2, size_t el_size);
@@ -35,6 +33,8 @@ char * Strdup(const char *s);
 int ReadFile(const char * filename, char buffer[]);
 
 int FullIndex(char *index[], char buffer[], size_t size);
+
+int WriteFromBuffer(const char *filename, char buffer[], size_t size);
 
 int main()
 {
@@ -72,6 +72,8 @@ int main()
     BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
 
     WriteToFile("SortOnegin.txt", index);
+
+    WriteFromBuffer("SortOnegin.txt", buffer, buffer_size);
 
 }
 
@@ -144,13 +146,6 @@ int CompareStrDown(const void *adr_a, const void *adr_b)
     return StrcompReverse(a,b);
 }
 
-int CompareDoubleUp(const void *adr_a, const void *adr_b)
-{
-    const double a = *(const double *)adr_a;
-    const double b = *(const double *)adr_b;
-
-    return (a - b);
-}
 
 void BubaSort(void *data, size_t len, size_t el_size, int(*Comparator) (const void *a, const void *b))
 {
@@ -291,4 +286,22 @@ int FullIndex(char *index[], char buffer[], size_t size)
 
     index[current_index] = NULL;
     return current_index;
+}
+
+int WriteFromBuffer(const char *filename, char buffer[], size_t size)
+{
+    FILE *fp = fopen(filename, "a");
+
+    printf("burmalda\n");
+
+    for(int i = 0; i<5; i++) fprintf(fp, ". . . . . . . . . . . . . . . . . . .\n");
+
+    for(int i = 0; i < size; i++)
+    {
+        if (buffer[i]) putc(buffer[i], fp);
+
+        else putc('\n', fp);
+    }
+
+    fclose(fp);
 }
