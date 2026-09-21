@@ -26,7 +26,7 @@ int StrcompReverse(const char *s1, const char *s2);
 
 char * Strdup(const char *s);
 
-int ReadFile(const char * filename, char buffer[]);
+int ReadFile(struct File file, char buffer[]);
 
 int FullIndex(char *index[], char buffer[], size_t size);
 
@@ -34,17 +34,32 @@ int WriteFromBuffer(const char *filename, char buffer[], size_t size);
 
 int CountSymbol(char *buffer, char sym, size_t size);
 
-int main()
+int SizeOfFile(struct File file);
+
+struct File
 {
-    struct stat st = {};
+    char *filename;
+    int file_descriptor;
+    struct stat st;
+};
 
-    stat("FullOnegin.txt", &st);
+int main(int argc, char *argv[])
+{
+    if (argc != 3)
+    {
+        printf("Enter the name of input and output files\n");
+        return 1;
+    }
 
-    size_t max_size = st.st_size;
+    struct File input_file = {};
+
+    input_file.filename = argv[1];
+
+    int max_size = SizeOfFile(input_file);
 
     char *buffer = (char *) calloc(max_size, sizeof(char));
 
-    int buffer_size = ReadFile("FullOnegin.txt", buffer);
+    int buffer_size = ReadFile(input_file, buffer);
 
     int num_of_lines = CountSymbol(buffer, '\n', buffer_size) + 1;
 
@@ -52,19 +67,17 @@ int main()
     
     char **index = (char**) calloc(num_of_lines, sizeof(char*));
 
-    index[0] = buffer;
-
     int num_of_strings = FullIndex(index, buffer, buffer_size);
 
     BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
 
-    WriteToFile("SortOnegin.txt", index);
+    WriteToFile(argv[2], index);
 
     qsort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
 
-    WriteToFile("SortOnegin.txt", index);
+    WriteToFile(argv[2], index);
 
-    WriteFromBuffer("SortOnegin.txt", buffer, buffer_size);
+    WriteFromBuffer(argv[2], buffer, buffer_size);
 
     free(buffer);
 
@@ -215,20 +228,19 @@ char * Strdup(const char *s) {
     return p;
 }
 
-int ReadFile(const char * filename, char buffer[]){
+int ReadFile(struct File file, char buffer[])
+{
+    stat(file.filename, &file.st);
 
-    struct stat st = {};
-    stat(filename, &st);
+    file.file_descriptor = open(file.filename, O_RDONLY);
 
-    int file_descriptor = open(filename, O_RDONLY);
+    size_t max_size = file.st.st_size;
 
-    size_t max_size = st.st_size;
+    if (file.file_descriptor == -1) return -1;
 
-    if (file_descriptor == -1) return -1;
+    size_t real_buffer_size = read(file.file_descriptor, buffer, max_size);
 
-    size_t real_buffer_size = read(file_descriptor, buffer, max_size);
-
-    close(file_descriptor);
+    close(file.file_descriptor);
 
     buffer[real_buffer_size] = '\0';
 
@@ -237,6 +249,8 @@ int ReadFile(const char * filename, char buffer[]){
 
 int FullIndex(char *index[], char buffer[], size_t size)
 {
+    index[0] = buffer;
+    
     int current_index = 1;
     int i = 0;
     int j = 0;
@@ -287,4 +301,17 @@ int CountSymbol(char *buffer, char sym, size_t size)
         if (buffer[i] == sym) count++;
 
     return count;
+}
+
+int SizeOfFile(struct File file)
+{
+    stat(file.filename, &file.st);
+
+    file.file_descriptor = open(file.filename, O_RDONLY);
+
+    size_t max_size = file.st.st_size;
+
+    if (file.file_descriptor == -1) return -1;
+    
+    return max_size;
 }
