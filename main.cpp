@@ -36,6 +36,8 @@ int CountSymbol(char *buffer, char sym, size_t size);
 
 int SizeOfFile(struct File file);
 
+int ClearOutputFile(char * filename);
+
 struct File
 {
     char *filename;
@@ -69,12 +71,12 @@ int main(int argc, char *argv[])
 
     int num_of_strings = FullIndex(index, buffer, buffer_size);
 
-    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
+    ClearOutputFile(argv[2]);
 
+    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
     WriteToFile(argv[2], index);
 
     qsort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
-
     WriteToFile(argv[2], index);
 
     WriteFromBuffer(argv[2], buffer, buffer_size);
@@ -207,6 +209,8 @@ int WriteToFile(const char * filename, char * index[])
 {
     FILE *fp = fopen(filename, "a");
 
+    if (fp == NULL) printf("Cant open the output file");
+
     for(int i = 0; i<5; i++) fprintf(fp, ". . . . . . . . . . . . . . . . . . .\n");
 
     int i = 0;
@@ -236,8 +240,11 @@ int ReadFile(struct File file, char buffer[])
 
     size_t max_size = file.st.st_size;
 
-    if (file.file_descriptor == -1) return -1;
-
+    if (file.file_descriptor == -1)
+    {
+        printf("Cant open the file\n");
+        return -1;
+    }
     size_t real_buffer_size = read(file.file_descriptor, buffer, max_size);
 
     close(file.file_descriptor);
@@ -250,7 +257,7 @@ int ReadFile(struct File file, char buffer[])
 int FullIndex(char *index[], char buffer[], size_t size)
 {
     index[0] = buffer;
-    
+
     int current_index = 1;
     int i = 0;
     int j = 0;
@@ -279,8 +286,6 @@ int FullIndex(char *index[], char buffer[], size_t size)
 int WriteFromBuffer(const char *filename, char buffer[], size_t size)
 {
     FILE *fp = fopen(filename, "a");
-
-    printf("burmalda\n");
 
     for(int i = 0; i<5; i++) fprintf(fp, ". . . . . . . . . . . . . . . . . . .\n");
 
@@ -314,4 +319,10 @@ int SizeOfFile(struct File file)
     if (file.file_descriptor == -1) return -1;
     
     return max_size;
+}
+
+int ClearOutputFile(char * filename)
+{
+    FILE *fp = fopen(filename, "w");
+    fclose(fp);  
 }
