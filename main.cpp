@@ -236,8 +236,6 @@ char * Strdup(const char *s) {
 
 int ReadFile(struct File *file, char buffer[])
 {
-    //stat(file.filename, &file.st);
-
     file->file_descriptor = open(file->filename, O_RDONLY);
 
     size_t max_size = file->st.st_size;
@@ -258,33 +256,29 @@ int ReadFile(struct File *file, char buffer[])
 
 int FillIndex(char *index[], char buffer[], size_t size)
 {
-    index[0] = buffer;
+    int current_index = 0;
 
-    int current_index = 1;
-    int i = 0;
-    int j = 0;
+    char *p = buffer;
+    char *end = buffer + size;
 
-    while (i < size)
+    index[current_index++] = p;
+
+    while (p < end && (p = strchr(p, '\n')) != NULL)
     {
-        if (buffer[i] == '\0') printf("!\n");
-        if (buffer[i] == '\n')
-        {
-            buffer[i] = '\0';
+        *p = '\0';
+        char *next = p + 1;
 
-            if (buffer[i+1] != '\n' && buffer[i+1] != '\0')
-            {
-                j = i + 1;
-                while (buffer[j] == ' ') j++;
-                index[current_index] = &(buffer[j]);
-                current_index++;
-            }
-        }
-        i++;
+        while (*next == ' ') next++;
+
+        if (*next != '\0' && *next != '\n' && next < end)
+            index[current_index++] = next;
+
+        p = next;
     }
 
     index[current_index] = NULL;
     return current_index;
-} //TODO: STRCHR
+}
 
 int WriteFromBuffer(const char *filename, char buffer[], size_t size)
 {
