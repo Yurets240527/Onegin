@@ -26,23 +26,36 @@ int StrcompReverse(const char *s1, const char *s2);
 
 char * Strdup(const char *s);
 
-int ReadFile(struct File file, char buffer[]);
+int ReadFile(struct File *file, char buffer[]);
 
-int FullIndex(char *index[], char buffer[], size_t size);
+int FillIndex(char *index[], char buffer[], size_t size);
 
 int WriteFromBuffer(const char *filename, char buffer[], size_t size);
 
 int CountSymbol(char *buffer, char sym, size_t size);
 
-int SizeOfFile(struct File file);
+int SizeOfFile(struct File *file);
 
 int ClearOutputFile(char * filename);
+
+int GetPoemInfo(struct data *poem);
 
 struct File
 {
     char *filename;
     int file_descriptor;
     struct stat st;
+};
+
+struct data
+{
+    struct File readfile;
+
+    char *buffer;
+    char **index;
+
+    int num_of_strings;
+    int buffer_size;
 };
 
 int main(int argc, char *argv[])
@@ -53,35 +66,24 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    struct File input_file = {};
+    struct data poem = {};
+    poem.readfile.filename = argv[1];
 
-    input_file.filename = argv[1];
-
-    int max_size = SizeOfFile(input_file);
-
-    char *buffer = (char *) calloc(max_size, sizeof(char));
-
-    int buffer_size = ReadFile(input_file, buffer);
-
-    int num_of_lines = CountSymbol(buffer, '\n', buffer_size) + 1;
-
-    printf("%d\n", buffer_size);
-    
-    char **index = (char**) calloc(num_of_lines, sizeof(char*));
-
-    int num_of_strings = FullIndex(index, buffer, buffer_size);
+    GetPoemInfo(&poem);
 
     ClearOutputFile(argv[2]);
 
-    BubaSort(index, num_of_strings, sizeof(index[0]), CompareStrUp);
-    WriteToFile(argv[2], index);
+    BubaSort(poem.index, poem.num_of_strings, sizeof(poem.index[0]), CompareStrUp);
+    WriteToFile(argv[2], poem.index);
 
-    qsort(index, num_of_strings, sizeof(index[0]), CompareStrDown);
-    WriteToFile(argv[2], index);
+    qsort(poem.index, poem.num_of_strings, sizeof(poem.index[0]), CompareStrDown);
+    WriteToFile(argv[2], poem.index);
 
-    WriteFromBuffer(argv[2], buffer, buffer_size);
+    WriteFromBuffer(argv[2], poem.buffer, poem.buffer_size);
 
-    free(buffer);
+    free(poem.buffer);
+
+    free(poem.index);
 
 }
 
@@ -115,7 +117,7 @@ int Strcomp(const char *s1, const char *s2)
 
 int StrcompReverse(const char *s1, const char *s2)
 {
-    int i = strlen(s1)-1;
+    int i = strlen(s1)-1; //TODO: COUNT LEN IN ARRAY
     int j = strlen(s2)-1;
 
     while (i > 0 && j > 0)
@@ -232,35 +234,36 @@ char * Strdup(const char *s) {
     return p;
 }
 
-int ReadFile(struct File file, char buffer[])
+int ReadFile(struct File *file, char buffer[])
 {
-    stat(file.filename, &file.st);
+    //stat(file.filename, &file.st);
 
-    file.file_descriptor = open(file.filename, O_RDONLY);
+    file->file_descriptor = open(file->filename, O_RDONLY);
 
-    size_t max_size = file.st.st_size;
+    size_t max_size = file->st.st_size;
 
-    if (file.file_descriptor == -1)
+    if (file->file_descriptor == -1)
     {
         printf("Cant open the file\n");
         return -1;
     }
-    size_t real_buffer_size = read(file.file_descriptor, buffer, max_size);
+    size_t real_buffer_size = read(file->file_descriptor, buffer, max_size);
 
-    close(file.file_descriptor);
+    close(file->file_descriptor);
 
     buffer[real_buffer_size] = '\0';
 
     return real_buffer_size;
 }
 
-int FullIndex(char *index[], char buffer[], size_t size)
+int FillIndex(char *index[], char buffer[], size_t size)
 {
     index[0] = buffer;
 
     int current_index = 1;
     int i = 0;
     int j = 0;
+
     while (i < size)
     {
         if (buffer[i] == '\0') printf("!\n");
@@ -281,7 +284,7 @@ int FullIndex(char *index[], char buffer[], size_t size)
 
     index[current_index] = NULL;
     return current_index;
-}
+} //TODO: STRCHR
 
 int WriteFromBuffer(const char *filename, char buffer[], size_t size)
 {
@@ -308,15 +311,15 @@ int CountSymbol(char *buffer, char sym, size_t size)
     return count;
 }
 
-int SizeOfFile(struct File file)
+int SizeOfFile(struct File *file)
 {
-    stat(file.filename, &file.st);
+    stat(file->filename, &file->st);
 
-    file.file_descriptor = open(file.filename, O_RDONLY);
+    file->file_descriptor = open(file->filename, O_RDONLY);
 
-    size_t max_size = file.st.st_size;
+    size_t max_size = file->st.st_size;
 
-    if (file.file_descriptor == -1) return -1;
+    if (file->file_descriptor == -1) return -1;
     
     return max_size;
 }
@@ -325,4 +328,35 @@ int ClearOutputFile(char * filename)
 {
     FILE *fp = fopen(filename, "w");
     fclose(fp);  
+}
+
+int GetPoemInfo(struct data *poem)
+{
+    int max_size = SizeOfFile(&(poem->readfile));
+
+    poem->buffer = (char *) calloc(max_size, sizeof(char));
+
+    if (!poem->buffer)
+    {
+        printf("Memory error");
+        return 1;
+    }
+
+    poem->buffer_size = ReadFile(&(poem->readfile), poem->buffer);
+
+    int num_of_lines = CountSymbol(poem->buffer, '\n', poem->buffer_size) + 1;
+
+    printf("%d\n", poem->buffer_size);
+    
+    poem->index = (char**) calloc(num_of_lines, sizeof(char*));
+
+    if (!poem->index)
+    {
+        printf("Memory error");
+        return 1;
+    }
+    
+    poem->num_of_strings = FillIndex(poem->index, poem->buffer, poem->buffer_size);
+
+    return poem->num_of_strings;
 }
