@@ -5,6 +5,30 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+struct File
+{
+    char *filename;
+    int file_descriptor;
+    struct stat st;
+};
+
+struct string
+{
+    char *ptr;
+    size_t len;
+};
+
+struct data
+{
+    struct File readfile;
+
+    char *buffer;
+    //char **index;
+    struct string *index;
+
+    int num_of_strings;
+    int buffer_size;
+};
 
 char * Index(void * data, size_t el_size, size_t i);
 
@@ -18,17 +42,17 @@ void Swap(void *value1, void *value2, size_t el_size);
 
 void PrintString(char *str, const char *reason);
 
-int WriteToFile(const char * filename, char * index[]);
+int WriteToFile(const char * filename, struct string *index);
 
 int Strcomp(const char *s1, const char *s2);
 
-int StrcompReverse(const char *s1, const char *s2);
+int StrcompReverse(const char *s1, size_t len1, const char *s2, size_t len2);
 
 char * Strdup(const char *s);
 
 int ReadFile(struct File *file, char buffer[]);
 
-int FillIndex(char *index[], char buffer[], size_t size);
+int FillIndex(struct string index[], char buffer[], size_t size);
 
 int WriteFromBuffer(const char *filename, char buffer[], size_t size);
 
@@ -39,24 +63,6 @@ int SizeOfFile(struct File *file);
 int ClearOutputFile(char * filename);
 
 int GetPoemInfo(struct data *poem);
-
-struct File
-{
-    char *filename;
-    int file_descriptor;
-    struct stat st;
-};
-
-struct data
-{
-    struct File readfile;
-
-    char *buffer;
-    char **index;
-
-    int num_of_strings;
-    int buffer_size;
-};
 
 int main(int argc, char *argv[])
 {
@@ -115,10 +121,10 @@ int Strcomp(const char *s1, const char *s2)
 
 }
 
-int StrcompReverse(const char *s1, const char *s2)
+int StrcompReverse(const char *s1, size_t len1, const char *s2, size_t len2)
 {
-    int i = strlen(s1)-1; //TODO: COUNT LEN IN ARRAY
-    int j = strlen(s2)-1;
+    int i = len1-1;
+    int j = len2-1;
 
     while (i > 0 && j > 0)
     {
@@ -142,18 +148,18 @@ int StrcompReverse(const char *s1, const char *s2)
 
 int CompareStrUp(const void *adr_a, const void *adr_b)
 {
-    const char* a = *(const char **)adr_a;
-    const char* b = *(const char **)adr_b;
+    const struct string *a = (const struct string *)adr_a;
+    const struct string *b = (const struct string *)adr_b;
 
-    return Strcomp(a,b);
+    return Strcomp(a->ptr, b->ptr);
 }
 
 int CompareStrDown(const void *adr_a, const void *adr_b)
 {
-    const char* a = *(const char **)adr_a;
-    const char* b = *(const char **)adr_b;
+    const struct string *a = (const struct string *)adr_a;
+    const struct string *b = (const struct string *)adr_b;
 
-    return StrcompReverse(a,b);
+    return StrcompReverse(a->ptr, a->len, b->ptr, b->len);
 }
 
 
@@ -207,7 +213,7 @@ char * Index(void * data, size_t el_size, size_t i)
     return (char *) data + el_size*i; 
 }
 
-int WriteToFile(const char * filename, char * index[])
+int WriteToFile(const char * filename, struct string index[])
 {
     FILE *fp = fopen(filename, "a");
 
@@ -216,9 +222,9 @@ int WriteToFile(const char * filename, char * index[])
     for(int i = 0; i<5; i++) fprintf(fp, ". . . . . . . . . . . . . . . . . . .\n");
 
     int i = 0;
-    while (index[i])
+    while (index[i].ptr)
     {
-        fprintf(fp, "%s\n", index[i]);
+        fprintf(fp, "%s\n", index[i].ptr);
         i++;
     }
     fclose(fp);
@@ -254,29 +260,42 @@ int ReadFile(struct File *file, char buffer[])
     return real_buffer_size;
 }
 
-int FillIndex(char *index[], char buffer[], size_t size)
+int FillIndex(struct string index[], char buffer[], size_t size)
 {
     int current_index = 0;
 
     char *p = buffer;
     char *end = buffer + size;
+    char *prev = buffer;
 
-    index[current_index++] = p;
+    index[current_index].ptr = p;
+    current_index++;
 
     while (p < end && (p = strchr(p, '\n')) != NULL)
     {
+        index[current_index - 1].len = (size_t)(p - prev);
+
         *p = '\0';
         char *next = p + 1;
 
         while (*next == ' ') next++;
 
         if (*next != '\0' && *next != '\n' && next < end)
-            index[current_index++] = next;
+        {
+            index[current_index].len = 0;
+            index[current_index++].ptr = next;
+        }
 
         p = next;
+        prev = next;
     }
 
-    index[current_index] = NULL;
+    if (current_index > 0 && prev < end)
+        index[current_index - 1].len = (size_t)(end - prev);
+
+    index[current_index].ptr = NULL;
+    index[current_index].len = 0;
+
     return current_index;
 }
 
@@ -342,7 +361,7 @@ int GetPoemInfo(struct data *poem)
 
     printf("%d\n", poem->buffer_size);
     
-    poem->index = (char**) calloc(num_of_lines, sizeof(char*));
+    poem->index = (struct string *) calloc(num_of_lines, sizeof(struct string));
 
     if (!poem->index)
     {
